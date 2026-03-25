@@ -61,7 +61,7 @@ fun SignupScreen(
 
             // Bitmoji Image (add in drawable)
             Image(
-                painter = painterResource(id = R.drawable.bitmoji),
+                painter = painterResource(id = R.drawable.bitemoji),
                 contentDescription = "Avatar",
                 modifier = Modifier
                     .size(120.dp)
@@ -141,8 +141,8 @@ fun SignupScreen(
                                 return@Button
                             }
 
-                            if (password.length < 6) {
-                                Toast.makeText(context, "Password must be 6+ chars", Toast.LENGTH_SHORT).show()
+                            if (password.length < 8) {
+                                Toast.makeText(context, "Password must be at least 8 characters", Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
 

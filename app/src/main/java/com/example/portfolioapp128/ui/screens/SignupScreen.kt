@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import com.example.portfolioapp128.R
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.database.FirebaseDatabase   // ✅ NEW
 
 @Composable
 fun SignupScreen(
@@ -37,7 +37,10 @@ fun SignupScreen(
 
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
-    val db = FirebaseFirestore.getInstance()
+
+    // ✅ REALTIME DB
+    val database = FirebaseDatabase.getInstance()
+    val reference = database.getReference("users")
 
     val gradient = Brush.verticalGradient(
         colors = listOf(
@@ -59,7 +62,6 @@ fun SignupScreen(
             verticalArrangement = Arrangement.Center
         ) {
 
-            // Bitmoji Image (add in drawable)
             Image(
                 painter = painterResource(id = R.drawable.bitemoji),
                 contentDescription = "Avatar",
@@ -109,7 +111,7 @@ fun SignupScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Password with toggle
+                    // Password toggle
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -157,17 +159,15 @@ fun SignupScreen(
 
                                     val userId = result.user?.uid
 
-                                    val userMap = hashMapOf(
+                                    val userMap = mapOf(
                                         "name" to name,
                                         "email" to email,
                                         "gender" to gender
                                     )
 
-                                    // SAVE TO FIRESTORE
+                                    // ✅ SAVE TO REALTIME DATABASE
                                     if (userId != null) {
-                                        db.collection("users")
-                                            .document(userId)
-                                            .set(userMap)
+                                        reference.child(userId).setValue(userMap)
                                     }
 
                                     Toast.makeText(context, "Account Created 🎉", Toast.LENGTH_SHORT).show()

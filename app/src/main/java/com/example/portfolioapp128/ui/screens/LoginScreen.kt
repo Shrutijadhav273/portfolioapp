@@ -1,7 +1,5 @@
 package com.example.portfolioapp128.ui.screens
 
-
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -12,16 +10,15 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun LoginScreen(onNavigateToSignup: () -> Unit) {
 
-    val auth = FirebaseAuth.getInstance()
-
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var message by remember { mutableStateOf("") }
+
+    val auth = FirebaseAuth.getInstance()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(20.dp),
         verticalArrangement = Arrangement.Center
     ) {
 
@@ -29,40 +26,24 @@ fun LoginScreen(onNavigateToSignup: () -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") })
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") })
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(
-            onClick = {
-                auth.signInWithEmailAndPassword(email, password)
-                    .addOnCompleteListener {
-                        message = if (it.isSuccessful) "Login Success" else "Login Failed"
-                    }
-            },
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Button(onClick = {
+            auth.signInWithEmailAndPassword(email, password)
+        }) {
             Text("Login")
         }
 
-        Text(message)
+        Spacer(modifier = Modifier.height(8.dp))
 
         TextButton(onClick = onNavigateToSignup) {
-            Text("Don't have an account? Sign up")
+            Text("Go to Signup")
         }
     }
 }

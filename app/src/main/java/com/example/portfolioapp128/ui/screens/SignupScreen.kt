@@ -11,16 +11,14 @@ import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import com.example.portfolioapp128.R
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase   // ✅ NEW
+import com.google.firebase.database.FirebaseDatabase
 
 @Composable
 fun SignupScreen(
@@ -31,14 +29,17 @@ fun SignupScreen(
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var gender by remember { mutableStateOf("Select Gender") }
-    var expanded by remember { mutableStateOf(false) }
+    var gender by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    // Error states
+    var emailError by remember { mutableStateOf("") }
+    var passwordError by remember { mutableStateOf("") }
+    var genderError by remember { mutableStateOf("") }
 
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
 
-    // ✅ REALTIME DB
     val database = FirebaseDatabase.getInstance()
     val reference = database.getReference("users")
 
@@ -82,78 +83,108 @@ fun SignupScreen(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    OutlinedTextField(name, { name = it }, label = { Text("Name") })
+                    // NAME
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    OutlinedTextField(email, { email = it }, label = { Text("Email") })
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Gender Dropdown
-                    Box {
-                        Button(onClick = { expanded = true }) {
-                            Text(gender)
-                        }
-
-                        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                            listOf("Male", "Female", "Other").forEach {
-                                DropdownMenuItem(
-                                    text = { Text(it) },
-                                    onClick = {
-                                        gender = it
-                                        expanded = false
-                                    }
-                                )
-                            }
-                        }
+                    // EMAIL
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = {
+                            email = it
+                            emailError = if (!android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches())
+                                "Invalid email format"
+                            else ""
+                        },
+                        label = { Text("Email") },
+                        isError = emailError.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    if (emailError.isNotEmpty()) {
+                        Text(emailError, color = MaterialTheme.colorScheme.error)
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Password toggle
+                    // 🔥 GENDER CHIPS (Better UI)
+                    Text("Select Gender")
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("Male", "Female", "Other").forEach {
+                            FilterChip(
+                                selected = gender == it,
+                                onClick = {
+                                    gender = it
+                                    genderError = ""
+                                },
+                                label = { Text(it) }
+                            )
+                        }
+                    }
+
+                    if (genderError.isNotEmpty()) {
+                        Text(genderError, color = MaterialTheme.colorScheme.error)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // PASSWORD
                     OutlinedTextField(
                         value = password,
-                        onValueChange = { password = it },
+                        onValueChange = {
+                            password = it
+                            passwordError = validatePassword(it)
+                        },
                         label = { Text("Password") },
-                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        isError = passwordError.isNotEmpty(),
+                        visualTransformation = if (passwordVisible)
+                            VisualTransformation.None
+                        else
+                            PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(
-                                    imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    imageVector = if (passwordVisible)
+                                        Icons.Default.Visibility
+                                    else
+                                        Icons.Default.VisibilityOff,
                                     contentDescription = ""
                                 )
                             }
-                        }
+                        },
+                        modifier = Modifier.fillMaxWidth()
                     )
+
+                    if (passwordError.isNotEmpty()) {
+                        Text(passwordError, color = MaterialTheme.colorScheme.error)
+                    }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
                         onClick = {
 
-                            // VALIDATION
                             if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
                                 Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
 
-                            if (!email.contains("@") || !email.contains(".")) {
-                                Toast.makeText(context, "Invalid Email", Toast.LENGTH_SHORT).show()
+                            if (emailError.isNotEmpty() || passwordError.isNotEmpty()) {
+                                Toast.makeText(context, "Fix errors first", Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
 
-                            if (password.length < 8) {
-                                Toast.makeText(context, "Password must be at least 8 characters", Toast.LENGTH_SHORT).show()
+                            if (gender.isEmpty()) {
+                                genderError = "Please select gender"
                                 return@Button
                             }
 
-                            if (gender == "Select Gender") {
-                                Toast.makeText(context, "Select Gender", Toast.LENGTH_SHORT).show()
-                                return@Button
-                            }
-
-                            // FIREBASE AUTH
                             auth.createUserWithEmailAndPassword(email, password)
                                 .addOnSuccessListener { result ->
 
@@ -165,7 +196,6 @@ fun SignupScreen(
                                         "gender" to gender
                                     )
 
-                                    // ✅ SAVE TO REALTIME DATABASE
                                     if (userId != null) {
                                         reference.child(userId).setValue(userMap)
                                     }
@@ -189,5 +219,15 @@ fun SignupScreen(
                 }
             }
         }
+    }
+}
+
+// 🔐 PASSWORD VALIDATION FUNCTION
+fun validatePassword(password: String): String {
+    return when {
+        password.length < 8 -> "Minimum 8 characters required"
+        !password.any { it.isUpperCase() } -> "Must contain 1 uppercase letter"
+        !password.any { it.isDigit() } -> "Must contain 1 number"
+        else -> ""
     }
 }

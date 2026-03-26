@@ -1,5 +1,6 @@
 package com.example.portfolioapp128.ui.screens
 
+import android.app.DatePickerDialog
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -10,34 +11,24 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.firestore.FirebaseFirestore
+import java.util.Calendar
 
 // 🔹 Data Classes
-data class Education(
-    var className: String = "",
-    var college: String = "",
-    var year: String = ""
-)
-
-data class Certificate(
-    var course: String = "",
-    var date: String = "",
-    var marks: String = ""
-)
-
-data class Internship(
-    var company: String = "",
-    var position: String = "",
-    var duration: String = ""
-)
+data class Education(var className: String = "", var college: String = "", var year: String = "")
+data class Certificate(var course: String = "", var date: String = "", var marks: String = "")
+data class Internship(var company: String = "", var position: String = "", var from: String = "", var to: String = "")
 
 @Composable
 fun HomeScreen() {
 
     val context = LocalContext.current
+    val db = FirebaseFirestore.getInstance()
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
 
     var name by remember { mutableStateOf("") }
     var position by remember { mutableStateOf("") }
@@ -47,242 +38,128 @@ fun HomeScreen() {
     var certificateList by remember { mutableStateOf(listOf(Certificate())) }
     var internshipList by remember { mutableStateOf(listOf(Internship())) }
 
-    val scrollState = rememberScrollState()
+    var isSaving by remember { mutableStateOf(false)}
+
+    val gradient = Brush.verticalGradient(
+        colors = listOf(Color(0xFF667eea), Color(0xFF764ba2))
+    )
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F7FA))
-            .verticalScroll(scrollState)
+            .background(gradient)
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
 
-        Text("Build Your Portfolio", style = MaterialTheme.typography.headlineMedium)
+        Text("Build Your Portfolio ✨", style = MaterialTheme.typography.headlineMedium, color = Color.White)
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // 🔹 BASIC INFO
-        Card(shape = RoundedCornerShape(16.dp)) {
+        Card(shape = RoundedCornerShape(20.dp)) {
             Column(Modifier.padding(16.dp)) {
 
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Full Name") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = position,
-                    onValueChange = { position = it },
-                    label = { Text("Position") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = skills,
-                    onValueChange = { skills = it },
-                    label = { Text("Skills") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(name, { name = it }, label = { Text("Full Name") })
+                OutlinedTextField(position, { position = it }, label = { Text("Position") })
+                OutlinedTextField(skills, { skills = it }, label = { Text("Skills") })
             }
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
         // 🔹 EDUCATION
-        Text("Education", style = MaterialTheme.typography.titleLarge)
+        SectionTitle("Education 🎓")
 
         educationList.forEachIndexed { index, edu ->
-            Card(modifier = Modifier.padding(vertical = 6.dp)) {
-                Column(Modifier.padding(12.dp)) {
-
-                    OutlinedTextField(
-                        value = edu.className,
-                        onValueChange = { value ->
-                            val list = educationList.toMutableList()
-                            list[index] = edu.copy(className = value)
-                            educationList = list
-                        },
-                        label = { Text("Class") }
-                    )
-
-                    OutlinedTextField(
-                        value = edu.college,
-                        onValueChange = { value ->
-                            val list = educationList.toMutableList()
-                            list[index] = edu.copy(college = value)
-                            educationList = list
-                        },
-                        label = { Text("College Name") }
-                    )
-
-                    OutlinedTextField(
-                        value = edu.year,
-                        onValueChange = { value ->
-                            val list = educationList.toMutableList()
-                            list[index] = edu.copy(year = value)
-                            educationList = list
-                        },
-                        label = { Text("Passing Year") }
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Button(
-                        onClick = {
-                            val list = educationList.toMutableList()
-                            list.removeAt(index)
-                            educationList = list
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text("Delete")
-                    }
+            CardItem {
+                InputField("Class", edu.className) {
+                    updateList(educationList, index, edu.copy(className = it)) { educationList = it }
+                }
+                InputField("College", edu.college) {
+                    updateList(educationList, index, edu.copy(college = it)) { educationList = it }
+                }
+                InputField("Year", edu.year) {
+                    updateList(educationList, index, edu.copy(year = it)) { educationList = it }
+                }
+                DeleteButton {
+                    educationList = educationList.toMutableList().also { it.removeAt(index) }
                 }
             }
         }
 
-        Button(onClick = { educationList = educationList + Education() }) {
-            Text("Add Education")
-        }
+        AddButton("Add Education") { educationList = educationList + Education() }
 
         Spacer(modifier = Modifier.height(20.dp))
 
         // 🔹 CERTIFICATES
-        Text("Certificates", style = MaterialTheme.typography.titleLarge)
+        SectionTitle("Certificates 📜")
 
         certificateList.forEachIndexed { index, cert ->
-            Card(modifier = Modifier.padding(vertical = 6.dp)) {
-                Column(Modifier.padding(12.dp)) {
+            CardItem {
+                InputField("Course", cert.course) {
+                    updateList(certificateList, index, cert.copy(course = it)) { certificateList = it }
+                }
 
-                    OutlinedTextField(
-                        value = cert.course,
-                        onValueChange = { value ->
-                            val list = certificateList.toMutableList()
-                            list[index] = cert.copy(course = value)
-                            certificateList = list
-                        },
-                        label = { Text("Course Name") }
-                    )
+                // 📅 DATE PICKER
+                DateField("Date", cert.date) {
+                    updateList(certificateList, index, cert.copy(date = it)) { certificateList = it }
+                }
 
-                    OutlinedTextField(
-                        value = cert.date,
-                        onValueChange = { value ->
-                            val list = certificateList.toMutableList()
-                            list[index] = cert.copy(date = value)
-                            certificateList = list
-                        },
-                        label = { Text("Date") }
-                    )
+                InputField("Marks", cert.marks) {
+                    updateList(certificateList, index, cert.copy(marks = it)) { certificateList = it }
+                }
 
-                    OutlinedTextField(
-                        value = cert.marks,
-                        onValueChange = { value ->
-                            val list = certificateList.toMutableList()
-                            list[index] = cert.copy(marks = value)
-                            certificateList = list
-                        },
-                        label = { Text("Marks") }
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Button(
-                        onClick = {
-                            val list = certificateList.toMutableList()
-                            list.removeAt(index)
-                            certificateList = list
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text("Delete")
-                    }
+                DeleteButton {
+                    certificateList = certificateList.toMutableList().also { it.removeAt(index) }
                 }
             }
         }
 
-        Button(onClick = { certificateList = certificateList + Certificate() }) {
-            Text("Add Certificate")
-        }
+        AddButton("Add Certificate") { certificateList = certificateList + Certificate() }
 
         Spacer(modifier = Modifier.height(20.dp))
 
         // 🔹 INTERNSHIPS
-        Text("Internships", style = MaterialTheme.typography.titleLarge)
+        SectionTitle("Internships 💼")
 
         internshipList.forEachIndexed { index, intern ->
-            Card(modifier = Modifier.padding(vertical = 6.dp)) {
-                Column(Modifier.padding(12.dp)) {
+            CardItem {
+                InputField("Company", intern.company) {
+                    updateList(internshipList, index, intern.copy(company = it)) { internshipList = it }
+                }
+                InputField("Position", intern.position) {
+                    updateList(internshipList, index, intern.copy(position = it)) { internshipList = it }
+                }
 
-                    OutlinedTextField(
-                        value = intern.company,
-                        onValueChange = { value ->
-                            val list = internshipList.toMutableList()
-                            list[index] = intern.copy(company = value)
-                            internshipList = list
-                        },
-                        label = { Text("Company Name") }
-                    )
+                DateField("From", intern.from) {
+                    updateList(internshipList, index, intern.copy(from = it)) { internshipList = it }
+                }
 
-                    OutlinedTextField(
-                        value = intern.position,
-                        onValueChange = { value ->
-                            val list = internshipList.toMutableList()
-                            list[index] = intern.copy(position = value)
-                            internshipList = list
-                        },
-                        label = { Text("Position") }
-                    )
+                DateField("To", intern.to) {
+                    updateList(internshipList, index, intern.copy(to = it)) { internshipList = it }
+                }
 
-                    OutlinedTextField(
-                        value = intern.duration,
-                        onValueChange = { value ->
-                            val list = internshipList.toMutableList()
-                            list[index] = intern.copy(duration = value)
-                            internshipList = list
-                        },
-                        label = { Text("Duration") }
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Button(
-                        onClick = {
-                            val list = internshipList.toMutableList()
-                            list.removeAt(index)
-                            internshipList = list
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Text("Delete")
-                    }
+                DeleteButton {
+                    internshipList = internshipList.toMutableList().also { it.removeAt(index) }
                 }
             }
         }
 
-        Button(onClick = { internshipList = internshipList + Internship() }) {
-            Text("Add Internship")
-        }
+        AddButton("Add Internship") { internshipList = internshipList + Internship() }
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        // 🔹 SAVE TO FIREBASE
+        // 🔹 SAVE BUTTON
         Button(
             onClick = {
 
-                val userId = FirebaseAuth.getInstance().currentUser?.uid
-
                 if (userId == null) {
-                    Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "User not logged in ❌", Toast.LENGTH_SHORT).show()
                     return@Button
                 }
 
-                val database = FirebaseDatabase.getInstance().reference
+                isSaving = true
 
                 val data = mapOf(
                     "name" to name,
@@ -293,17 +170,95 @@ fun HomeScreen() {
                     "internships" to internshipList
                 )
 
-                database.child("users").child(userId).setValue(data)
+                db.collection("users")
+                    .document(userId)
+                    .set(data)
                     .addOnSuccessListener {
-                        Toast.makeText(context, "Saved to Firebase!", Toast.LENGTH_SHORT).show()
+                        isSaving = false
+                        Toast.makeText(context, "Details Saved Successfully ✅", Toast.LENGTH_SHORT).show()
                     }
                     .addOnFailureListener {
-                        Toast.makeText(context, "Failed: ${it.message}", Toast.LENGTH_SHORT).show()
+                        isSaving = false
+                        Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_LONG).show()
                     }
+
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Save Portfolio")
+            Text(if (isSaving) "Saving..." else "Save Details")
         }
     }
+}
+
+@Composable
+fun SectionTitle(title: String) {
+    Text(title, style = MaterialTheme.typography.titleLarge, color = Color.White)
+}
+
+@Composable
+fun CardItem(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.padding(vertical = 6.dp)
+    ) {
+        Column(Modifier.padding(12.dp), content = content)
+    }
+}
+
+@Composable
+fun InputField(label: String, value: String, onChange: (String) -> Unit) {
+    OutlinedTextField(value, onChange, label = { Text(label) }, modifier = Modifier.fillMaxWidth())
+}
+
+@Composable
+fun AddButton(text: String, onClick: () -> Unit) {
+    Button(onClick = onClick) {
+        Text(text)
+    }
+}
+
+@Composable
+fun DeleteButton(onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+    ) {
+        Text("Delete")
+    }
+}
+
+@Composable
+fun DateField(label: String, value: String, onDateSelected: (String) -> Unit) {
+
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+
+    val datePicker = DatePickerDialog(
+        context,
+        { _, year, month, day ->
+            onDateSelected("$day/${month + 1}/$year")
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
+
+    OutlinedTextField(
+        value = value,
+        onValueChange = {},
+        label = { Text(label) },
+        readOnly = true,
+        modifier = Modifier.fillMaxWidth(),
+        trailingIcon = {
+            IconButton(onClick = { datePicker.show() }) {
+                Text("📅")
+            }
+        }
+    )
+}
+
+fun <T> updateList(list: List<T>, index: Int, newItem: T, update: (List<T>) -> Unit) {
+    val newList = list.toMutableList()
+    newList[index] = newItem
+    update(newList)
 }

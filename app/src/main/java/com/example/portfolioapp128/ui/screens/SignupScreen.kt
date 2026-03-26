@@ -34,7 +34,6 @@ fun SignupScreen(
 
     var emailError by remember { mutableStateOf("") }
     var passwordError by remember { mutableStateOf("") }
-    var genderError by remember { mutableStateOf("") }
 
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
@@ -148,9 +147,14 @@ fun SignupScreen(
                                 db.collection("users")
                                     .document(userId)
                                     .set(userData)
+                                    .addOnSuccessListener {
+                                        Toast.makeText(context, "Saved to Firestore ✅", Toast.LENGTH_SHORT).show()
+                                        onSignupSuccess()
+                                    }
+                                    .addOnFailureListener {
+                                        Toast.makeText(context, "Firestore Error: ${it.message}", Toast.LENGTH_LONG).show()
+                                    }
 
-                                Toast.makeText(context, "Signup Success 🎉", Toast.LENGTH_SHORT).show()
-                                onSignupSuccess()
                             }
                             .addOnFailureListener {
                                 Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()

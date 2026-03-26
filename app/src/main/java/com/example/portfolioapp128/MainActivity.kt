@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 // 🔴 Import your screens explicitly (important)
 import com.example.portfolioapp128.ui.screens.HomeScreen
 import com.example.portfolioapp128.ui.screens.LoginScreen
+import com.example.portfolioapp128.ui.screens.PreviewScreen
 import com.example.portfolioapp128.ui.screens.SignupScreen
 
 class MainActivity : ComponentActivity() {
@@ -56,7 +57,7 @@ class MainActivity : ComponentActivity() {
 
                 // 🔹 Home Screen
                 composable("home") {
-                    HomeScreen()
+                    HomeScreen(navController)
                 }
                 composable("preview") {
                     PreviewScreen()

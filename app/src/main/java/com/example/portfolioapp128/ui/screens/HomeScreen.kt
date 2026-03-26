@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.util.Calendar
@@ -24,7 +25,7 @@ data class Certificate(var course: String = "", var date: String = "", var marks
 data class Internship(var company: String = "", var position: String = "", var from: String = "", var to: String = "")
 
 @Composable
-fun HomeScreen() {
+fun HomeScreen(navController: NavController) {
 
     val context = LocalContext.current
     val db = FirebaseFirestore.getInstance()
@@ -38,7 +39,7 @@ fun HomeScreen() {
     var certificateList by remember { mutableStateOf(listOf(Certificate())) }
     var internshipList by remember { mutableStateOf(listOf(Internship())) }
 
-    var isSaving by remember { mutableStateOf(false)}
+    var isSaving by remember { mutableStateOf(false) }
 
     val gradient = Brush.verticalGradient(
         colors = listOf(Color(0xFF667eea), Color(0xFF764ba2))
@@ -52,7 +53,11 @@ fun HomeScreen() {
             .padding(16.dp)
     ) {
 
-        Text("Build Your Portfolio ✨", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+        Text(
+            "Build Your Portfolio ✨",
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.White
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -60,9 +65,9 @@ fun HomeScreen() {
         Card(shape = RoundedCornerShape(20.dp)) {
             Column(Modifier.padding(16.dp)) {
 
-                OutlinedTextField(name, { name = it }, label = { Text("Full Name") })
-                OutlinedTextField(position, { position = it }, label = { Text("Position") })
-                OutlinedTextField(skills, { skills = it }, label = { Text("Skills") })
+                InputField("Full Name", name) { name = it }
+                InputField("Position", position) { position = it }
+                InputField("Skills", skills) { skills = it }
             }
         }
 
@@ -82,13 +87,16 @@ fun HomeScreen() {
                 InputField("Year", edu.year) {
                     updateList(educationList, index, edu.copy(year = it)) { educationList = it }
                 }
+
                 DeleteButton {
                     educationList = educationList.toMutableList().also { it.removeAt(index) }
                 }
             }
         }
 
-        AddButton("Add Education") { educationList = educationList + Education() }
+        AddButton("Add Education") {
+            educationList = educationList + Education()
+        }
 
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -101,7 +109,6 @@ fun HomeScreen() {
                     updateList(certificateList, index, cert.copy(course = it)) { certificateList = it }
                 }
 
-                // 📅 DATE PICKER
                 DateField("Date", cert.date) {
                     updateList(certificateList, index, cert.copy(date = it)) { certificateList = it }
                 }
@@ -116,7 +123,9 @@ fun HomeScreen() {
             }
         }
 
-        AddButton("Add Certificate") { certificateList = certificateList + Certificate() }
+        AddButton("Add Certificate") {
+            certificateList = certificateList + Certificate()
+        }
 
         Spacer(modifier = Modifier.height(20.dp))
 
@@ -146,7 +155,9 @@ fun HomeScreen() {
             }
         }
 
-        AddButton("Add Internship") { internshipList = internshipList + Internship() }
+        AddButton("Add Internship") {
+            internshipList = internshipList + Internship()
+        }
 
         Spacer(modifier = Modifier.height(30.dp))
 
@@ -175,17 +186,29 @@ fun HomeScreen() {
                     .set(data)
                     .addOnSuccessListener {
                         isSaving = false
-                        Toast.makeText(context, "Details Saved Successfully ✅", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Saved Successfully ✅", Toast.LENGTH_SHORT).show()
                     }
                     .addOnFailureListener {
                         isSaving = false
-                        Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, it.message, Toast.LENGTH_LONG).show()
                     }
 
             },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(if (isSaving) "Saving..." else "Save Details")
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // 🔥 PREVIEW BUTTON
+        Button(
+            onClick = {
+                navController.navigate("preview")
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Preview Resume 👀")
         }
     }
 }

@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 
 // 🔹 Data Classes
 data class Education(
@@ -59,13 +61,13 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 🔹 Basic Info
+        // 🔹 BASIC INFO
         Card(shape = RoundedCornerShape(16.dp)) {
             Column(Modifier.padding(16.dp)) {
 
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { newValue -> name = newValue },
+                    onValueChange = { name = it },
                     label = { Text("Full Name") },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -74,7 +76,7 @@ fun HomeScreen() {
 
                 OutlinedTextField(
                     value = position,
-                    onValueChange = { newValue -> position = newValue },
+                    onValueChange = { position = it },
                     label = { Text("Position") },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -83,7 +85,7 @@ fun HomeScreen() {
 
                 OutlinedTextField(
                     value = skills,
-                    onValueChange = { newValue -> skills = newValue },
+                    onValueChange = { skills = it },
                     label = { Text("Skills") },
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -93,174 +95,215 @@ fun HomeScreen() {
         Spacer(modifier = Modifier.height(20.dp))
 
         // 🔹 EDUCATION
-        SectionTitle("Education")
+        Text("Education", style = MaterialTheme.typography.titleLarge)
 
         educationList.forEachIndexed { index, edu ->
-
             Card(modifier = Modifier.padding(vertical = 6.dp)) {
                 Column(Modifier.padding(12.dp)) {
 
                     OutlinedTextField(
                         value = edu.className,
-                        onValueChange = { newValue ->
-                            val updatedList = educationList.toMutableList()
-                            updatedList[index] = edu.copy(className = newValue)
-                            educationList = updatedList
+                        onValueChange = { value ->
+                            val list = educationList.toMutableList()
+                            list[index] = edu.copy(className = value)
+                            educationList = list
                         },
-                        label = { Text("Class") },
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text("Class") }
                     )
 
                     OutlinedTextField(
                         value = edu.college,
-                        onValueChange = { newValue ->
-                            val updatedList = educationList.toMutableList()
-                            updatedList[index] = edu.copy(college = newValue)
-                            educationList = updatedList
+                        onValueChange = { value ->
+                            val list = educationList.toMutableList()
+                            list[index] = edu.copy(college = value)
+                            educationList = list
                         },
-                        label = { Text("College Name") },
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text("College Name") }
                     )
 
                     OutlinedTextField(
                         value = edu.year,
-                        onValueChange = { newValue ->
-                            val updatedList = educationList.toMutableList()
-                            updatedList[index] = edu.copy(year = newValue)
-                            educationList = updatedList
+                        onValueChange = { value ->
+                            val list = educationList.toMutableList()
+                            list[index] = edu.copy(year = value)
+                            educationList = list
                         },
-                        label = { Text("Passing Year") },
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text("Passing Year") }
                     )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            val list = educationList.toMutableList()
+                            list.removeAt(index)
+                            educationList = list
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Delete")
+                    }
                 }
             }
         }
 
-        Button(onClick = {
-            educationList = educationList + Education()
-        }) {
+        Button(onClick = { educationList = educationList + Education() }) {
             Text("Add Education")
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
         // 🔹 CERTIFICATES
-        SectionTitle("Certificates")
+        Text("Certificates", style = MaterialTheme.typography.titleLarge)
 
         certificateList.forEachIndexed { index, cert ->
-
             Card(modifier = Modifier.padding(vertical = 6.dp)) {
                 Column(Modifier.padding(12.dp)) {
 
                     OutlinedTextField(
                         value = cert.course,
-                        onValueChange = { newValue ->
-                            val updatedList = certificateList.toMutableList()
-                            updatedList[index] = cert.copy(course = newValue)
-                            certificateList = updatedList
+                        onValueChange = { value ->
+                            val list = certificateList.toMutableList()
+                            list[index] = cert.copy(course = value)
+                            certificateList = list
                         },
-                        label = { Text("Course Name") },
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text("Course Name") }
                     )
 
                     OutlinedTextField(
                         value = cert.date,
-                        onValueChange = { newValue ->
-                            val updatedList = certificateList.toMutableList()
-                            updatedList[index] = cert.copy(date = newValue)
-                            certificateList = updatedList
+                        onValueChange = { value ->
+                            val list = certificateList.toMutableList()
+                            list[index] = cert.copy(date = value)
+                            certificateList = list
                         },
-                        label = { Text("Date") },
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text("Date") }
                     )
 
                     OutlinedTextField(
                         value = cert.marks,
-                        onValueChange = { newValue ->
-                            val updatedList = certificateList.toMutableList()
-                            updatedList[index] = cert.copy(marks = newValue)
-                            certificateList = updatedList
+                        onValueChange = { value ->
+                            val list = certificateList.toMutableList()
+                            list[index] = cert.copy(marks = value)
+                            certificateList = list
                         },
-                        label = { Text("Marks") },
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text("Marks") }
                     )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            val list = certificateList.toMutableList()
+                            list.removeAt(index)
+                            certificateList = list
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Delete")
+                    }
                 }
             }
         }
 
-        Button(onClick = {
-            certificateList = certificateList + Certificate()
-        }) {
+        Button(onClick = { certificateList = certificateList + Certificate() }) {
             Text("Add Certificate")
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
         // 🔹 INTERNSHIPS
-        SectionTitle("Internships")
+        Text("Internships", style = MaterialTheme.typography.titleLarge)
 
         internshipList.forEachIndexed { index, intern ->
-
             Card(modifier = Modifier.padding(vertical = 6.dp)) {
                 Column(Modifier.padding(12.dp)) {
 
                     OutlinedTextField(
                         value = intern.company,
-                        onValueChange = { newValue ->
-                            val updatedList = internshipList.toMutableList()
-                            updatedList[index] = intern.copy(company = newValue)
-                            internshipList = updatedList
+                        onValueChange = { value ->
+                            val list = internshipList.toMutableList()
+                            list[index] = intern.copy(company = value)
+                            internshipList = list
                         },
-                        label = { Text("Company Name") },
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text("Company Name") }
                     )
 
                     OutlinedTextField(
                         value = intern.position,
-                        onValueChange = { newValue ->
-                            val updatedList = internshipList.toMutableList()
-                            updatedList[index] = intern.copy(position = newValue)
-                            internshipList = updatedList
+                        onValueChange = { value ->
+                            val list = internshipList.toMutableList()
+                            list[index] = intern.copy(position = value)
+                            internshipList = list
                         },
-                        label = { Text("Position") },
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text("Position") }
                     )
 
                     OutlinedTextField(
                         value = intern.duration,
-                        onValueChange = { newValue ->
-                            val updatedList = internshipList.toMutableList()
-                            updatedList[index] = intern.copy(duration = newValue)
-                            internshipList = updatedList
+                        onValueChange = { value ->
+                            val list = internshipList.toMutableList()
+                            list[index] = intern.copy(duration = value)
+                            internshipList = list
                         },
-                        label = { Text("Duration") },
-                        modifier = Modifier.fillMaxWidth()
+                        label = { Text("Duration") }
                     )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Button(
+                        onClick = {
+                            val list = internshipList.toMutableList()
+                            list.removeAt(index)
+                            internshipList = list
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Text("Delete")
+                    }
                 }
             }
         }
 
-        Button(onClick = {
-            internshipList = internshipList + Internship()
-        }) {
+        Button(onClick = { internshipList = internshipList + Internship() }) {
             Text("Add Internship")
         }
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        // 🔹 SAVE BUTTON
+        // 🔹 SAVE TO FIREBASE
         Button(
             onClick = {
-                Toast.makeText(context, "Portfolio Saved Successfully!", Toast.LENGTH_SHORT).show()
+
+                val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+                if (userId == null) {
+                    Toast.makeText(context, "User not logged in", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
+
+                val database = FirebaseDatabase.getInstance().reference
+
+                val data = mapOf(
+                    "name" to name,
+                    "position" to position,
+                    "skills" to skills,
+                    "education" to educationList,
+                    "certificates" to certificateList,
+                    "internships" to internshipList
+                )
+
+                database.child("users").child(userId).setValue(data)
+                    .addOnSuccessListener {
+                        Toast.makeText(context, "Saved to Firebase!", Toast.LENGTH_SHORT).show()
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(context, "Failed: ${it.message}", Toast.LENGTH_SHORT).show()
+                    }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Save Portfolio")
         }
     }
-}
-
-@Composable
-fun SectionTitle(title: String) {
-    Text(title, style = MaterialTheme.typography.titleLarge)
 }

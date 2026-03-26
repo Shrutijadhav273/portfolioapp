@@ -58,6 +58,9 @@ class MainActivity : ComponentActivity() {
                 composable("home") {
                     HomeScreen()
                 }
+                composable("preview") {
+                    PreviewScreen()
+                }
             }
         }
     }

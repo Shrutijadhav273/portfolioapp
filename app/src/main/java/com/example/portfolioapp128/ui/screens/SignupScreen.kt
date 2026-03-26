@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import com.example.portfolioapp128.R
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.firestore.FirebaseFirestore
 
 @Composable
 fun SignupScreen(
@@ -32,16 +32,13 @@ fun SignupScreen(
     var gender by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // Error states
     var emailError by remember { mutableStateOf("") }
     var passwordError by remember { mutableStateOf("") }
     var genderError by remember { mutableStateOf("") }
 
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
-
-    val database = FirebaseDatabase.getInstance()
-    val reference = database.getReference("users")
+    val db = FirebaseFirestore.getInstance()
 
     val gradient = Brush.verticalGradient(
         colors = listOf(
@@ -51,93 +48,61 @@ fun SignupScreen(
     )
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(gradient)
+        modifier = Modifier.fillMaxSize().background(gradient)
     ) {
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
+            modifier = Modifier.fillMaxSize().padding(20.dp),
             verticalArrangement = Arrangement.Center
         ) {
 
             Image(
                 painter = painterResource(id = R.drawable.bitemoji),
-                contentDescription = "Avatar",
-                modifier = Modifier
-                    .size(120.dp)
-                    .align(Alignment.CenterHorizontally)
+                contentDescription = null,
+                modifier = Modifier.size(120.dp).align(Alignment.CenterHorizontally)
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Card(
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+            Card(shape = RoundedCornerShape(20.dp)) {
+                Column(Modifier.padding(16.dp)) {
 
-                    Text("Create Account 💖💙", style = MaterialTheme.typography.headlineSmall)
+                    Text("Create Account 💖", style = MaterialTheme.typography.headlineSmall)
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(name, { name = it }, label = { Text("Name") })
 
-                    // NAME
                     OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("Name") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // EMAIL
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = {
+                        email,
+                        {
                             email = it
-                            emailError = if (!android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches())
-                                "Invalid email format"
-                            else ""
+                            emailError =
+                                if (!android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches())
+                                    "Invalid email"
+                                else ""
                         },
                         label = { Text("Email") },
-                        isError = emailError.isNotEmpty(),
-                        modifier = Modifier.fillMaxWidth()
+                        isError = emailError.isNotEmpty()
                     )
+
                     if (emailError.isNotEmpty()) {
                         Text(emailError, color = MaterialTheme.colorScheme.error)
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Gender")
 
-                    // 🔥 GENDER CHIPS (Better UI)
-                    Text("Select Gender")
-
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row {
                         listOf("Male", "Female", "Other").forEach {
                             FilterChip(
                                 selected = gender == it,
-                                onClick = {
-                                    gender = it
-                                    genderError = ""
-                                },
+                                onClick = { gender = it },
                                 label = { Text(it) }
                             )
                         }
                     }
 
-                    if (genderError.isNotEmpty()) {
-                        Text(genderError, color = MaterialTheme.colorScheme.error)
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // PASSWORD
                     OutlinedTextField(
-                        value = password,
-                        onValueChange = {
+                        password,
+                        {
                             password = it
                             passwordError = validatePassword(it)
                         },
@@ -145,76 +110,58 @@ fun SignupScreen(
                         isError = passwordError.isNotEmpty(),
                         visualTransformation = if (passwordVisible)
                             VisualTransformation.None
-                        else
-                            PasswordVisualTransformation(),
+                        else PasswordVisualTransformation(),
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(
-                                    imageVector = if (passwordVisible)
-                                        Icons.Default.Visibility
-                                    else
-                                        Icons.Default.VisibilityOff,
-                                    contentDescription = ""
+                                    if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = null
                                 )
                             }
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                        }
                     )
 
                     if (passwordError.isNotEmpty()) {
                         Text(passwordError, color = MaterialTheme.colorScheme.error)
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    Button(
-                        onClick = {
+                    Button(onClick = {
 
-                            if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
-                                Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
-                                return@Button
+                        if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
+                            Toast.makeText(context, "Fill all fields", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+
+                        auth.createUserWithEmailAndPassword(email, password)
+                            .addOnSuccessListener { result ->
+
+                                val userId = result.user?.uid!!
+
+                                val userData = mapOf(
+                                    "name" to name,
+                                    "email" to email,
+                                    "gender" to gender
+                                )
+
+                                db.collection("users")
+                                    .document(userId)
+                                    .set(userData)
+
+                                Toast.makeText(context, "Signup Success 🎉", Toast.LENGTH_SHORT).show()
+                                onSignupSuccess()
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
                             }
 
-                            if (emailError.isNotEmpty() || passwordError.isNotEmpty()) {
-                                Toast.makeText(context, "Fix errors first", Toast.LENGTH_SHORT).show()
-                                return@Button
-                            }
-
-                            if (gender.isEmpty()) {
-                                genderError = "Please select gender"
-                                return@Button
-                            }
-
-                            auth.createUserWithEmailAndPassword(email, password)
-                                .addOnSuccessListener { result ->
-
-                                    val userId = result.user?.uid
-
-                                    val userMap = mapOf(
-                                        "name" to name,
-                                        "email" to email,
-                                        "gender" to gender
-                                    )
-
-                                    if (userId != null) {
-                                        reference.child(userId).setValue(userMap)
-                                    }
-
-                                    Toast.makeText(context, "Account Created 🎉", Toast.LENGTH_SHORT).show()
-                                    onSignupSuccess()
-                                }
-                                .addOnFailureListener {
-                                    Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
-                                }
-
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
+                    }) {
                         Text("Signup")
                     }
 
                     TextButton(onClick = onNavigateToLogin) {
-                        Text("Already registered? Login 💙")
+                        Text("Already have account? Login")
                     }
                 }
             }
@@ -222,12 +169,11 @@ fun SignupScreen(
     }
 }
 
-// 🔐 PASSWORD VALIDATION FUNCTION
 fun validatePassword(password: String): String {
     return when {
-        password.length < 8 -> "Minimum 8 characters required"
-        !password.any { it.isUpperCase() } -> "Must contain 1 uppercase letter"
-        !password.any { it.isDigit() } -> "Must contain 1 number"
+        password.length < 8 -> "Min 8 chars"
+        !password.any { it.isUpperCase() } -> "1 uppercase required"
+        !password.any { it.isDigit() } -> "1 number required"
         else -> ""
     }
 }

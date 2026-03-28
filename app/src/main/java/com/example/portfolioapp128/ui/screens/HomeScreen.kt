@@ -109,7 +109,6 @@ fun HomeScreen(navController: NavController) {
                     updateList(certificateList, index, cert.copy(course = it)) { certificateList = it }
                 }
 
-
                 DateField("From", cert.date) {
                     updateList(certificateList, index, cert.copy(date = it)) { certificateList = it  }
                 }
@@ -206,7 +205,6 @@ fun HomeScreen(navController: NavController) {
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // 🔥 PREVIEW BUTTON
         Button(
             onClick = {
                 navController.navigate("preview")
@@ -238,9 +236,16 @@ fun InputField(label: String, value: String, onChange: (String) -> Unit) {
     OutlinedTextField(value, onChange, label = { Text(label) }, modifier = Modifier.fillMaxWidth())
 }
 
+// ✅ 🔥 ONLY CHANGE HERE (PINK BUTTON)
 @Composable
 fun AddButton(text: String, onClick: () -> Unit) {
-    Button(onClick = onClick) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFFE91E63), // 💗 Pink
+            contentColor = Color.White
+        )
+    ) {
         Text(text)
     }
 }

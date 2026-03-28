@@ -109,7 +109,12 @@ fun HomeScreen(navController: NavController) {
                     updateList(certificateList, index, cert.copy(course = it)) { certificateList = it }
                 }
 
-                DateField("Date", cert.date) {
+
+                DateField("From", cert.date) {
+                    updateList(certificateList, index, cert.copy(date = it)) { certificateList = it  }
+                }
+
+                DateField("To", cert.date) {
                     updateList(certificateList, index, cert.copy(date = it)) { certificateList = it }
                 }
 

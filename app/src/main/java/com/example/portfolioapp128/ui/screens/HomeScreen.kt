@@ -84,7 +84,7 @@ fun HomeScreen(navController: NavController) {
                 InputField("College", edu.college) {
                     updateList(educationList, index, edu.copy(college = it)) { educationList = it }
                 }
-                InputField("Year", edu.year) {
+                InputField("Passing Year", edu.year) {
                     updateList(educationList, index, edu.copy(year = it)) { educationList = it }
                 }
 

@@ -79,14 +79,7 @@ fun PreviewScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            Button(
-                onClick = {
-                    navController.navigate("home")
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Edit Details ✏️")
-            }
+
 
             Spacer(modifier = Modifier.height(8.dp))
 

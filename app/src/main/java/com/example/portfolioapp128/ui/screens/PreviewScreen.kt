@@ -49,37 +49,36 @@ fun PreviewScreen(navController: NavController) {
                 .padding(16.dp)
         ) {
 
-            Text(data?.get("name").toString(), style = MaterialTheme.typography.headlineLarge)
-            Text(data?.get("position").toString())
+            Text(data?.get("name") as? String ?: "", style = MaterialTheme.typography.headlineLarge)
+            Text(data?.get("position") as? String ?: "")
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Text("Skills: ${data?.get("skills")}")
+            Text("Skills: ${data?.get("skills") as? String ?: ""}")
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Text("Education", style = MaterialTheme.typography.titleLarge)
             (data?.get("education") as? List<Map<String, Any>>)?.forEach {
-                Text(it.toString())
+                Text("${it["className"]} - ${it["college"]} (${it["year"]})")
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text("Certificates", style = MaterialTheme.typography.titleLarge)
             (data?.get("certificates") as? List<Map<String, Any>>)?.forEach {
-                Text(it.toString())
+                Text("${it["course"]} - ${it["date"]} (${it["marks"]})")
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text("Internships", style = MaterialTheme.typography.titleLarge)
             (data?.get("internships") as? List<Map<String, Any>>)?.forEach {
-                Text(it.toString())
+                Text("${it["company"]} - ${it["position"]} (${it["from"]} to ${it["to"]})")
             }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // 🔥 EDIT BUTTON
             Button(
                 onClick = {
                     navController.navigate("home")
@@ -91,7 +90,6 @@ fun PreviewScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 🔥 FEEDBACK BUTTON
             Button(
                 onClick = {
                     navController.navigate("feedback")
@@ -103,7 +101,6 @@ fun PreviewScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 🔥 LOGOUT BUTTON
             Button(
                 onClick = {
                     auth.signOut()
